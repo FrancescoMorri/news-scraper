@@ -29,7 +29,7 @@ def load_today_or_false(path, date):
 
 DEFAULT_PATH = "daily_data.jsonl"
 
-st.set_page_config(page_title="Daily NLP Dashboard", layout="wide")
+st.set_page_config(page_title="Daily News Dashboard", layout="wide")
 
 # ---------- SIDEBAR ----------
 st.sidebar.header("Settings")
@@ -41,7 +41,7 @@ today = datetime.today().strftime('%Y-%m-%d')
 
 
 # ---------- LOAD OR SCRAPE ----------
-st.title("Daily NLP Dashboard")
+st.title("Daily News Dashboard")
 
 status_placeholder = st.empty()
 
