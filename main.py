@@ -67,7 +67,7 @@ today = datetime.today().strftime('%Y-%m-%d')
 
 # ---------- LOAD OR SCRAPE ----------
 st.title("Daily News Dashboard")
-
+st.subheader(f"Scraping and analyzing news for {today}, news headlines coming from: [Timef](https://timef.com/business/), [skimfeed](https://skimfeed.com/custom.php?f=l%2Cp%2C119%2C121%2C122%2C123%2C124%2C125%2C126%2C127%2C156) and [brutalist.report](https://brutalist.report/topic/business). The analysis is done using a combination of _VADER sentiment analysis_ and the _Loughran-McDonald_ financial sentiment lexicon.")
 status_placeholder = st.empty()
 
 
