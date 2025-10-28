@@ -208,7 +208,10 @@ with history_tab:
         "date": dates,
         "% LM-negative": hist_pct_neg,
         "% LM-uncertainty": hist_pct_unc,
-        "% LM-positive": hist_pct_pos,
+        "% LM-positive": hist_pct_pos
+    })
+    bigrams_df = pd.DataFrame({
+        "date": dates,
         "Top Bigrams": hist_bigrams
     })
 
@@ -220,12 +223,13 @@ with history_tab:
     .encode(
         x=alt.X("date:N", axis=alt.Axis(labelAngle=-45, title="Date")),
         y=alt.Y("Percentage:Q", title="Percentage (%)"),
-        color=alt.Color("Sentiment:N", title="Sentiment"),  # ← auto colors
+        color=alt.Color("Sentiment:N", title="Sentiment"), 
         tooltip=["date:N", "Sentiment:N", "Percentage:Q"]
         )
     .properties(title="Language Model Sentiment Over Time", height=400)
     )
 
     st.altair_chart(chart, use_container_width=True)
+
     st.subheader("Historical Top Bigrams")
-    st.dataframe(hist_df[["date", "Top Bigrams"]])
+    st.dataframe(bigrams_df)
