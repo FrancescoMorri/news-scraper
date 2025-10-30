@@ -8,6 +8,7 @@ import pandas as pd
 import requests
 import base64
 import altair as alt
+import yfinance as yf
 
 
 # --------- GitHub API stuff ---------
@@ -16,6 +17,12 @@ GITHUB_TOKEN = st.secrets["github_token"]
 REPO = "francescomorri/news-scraper"
 FILE_PATH = "daily_data.jsonl"
 API_URL = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+
+
+@st.cache_data(ttl=3600*6)  # cache for 6 hours
+def load_data(ticker: str, start: str, end: str) -> pd.DataFrame:
+    data = yf.download(ticker, start=start, end=end)
+    return data
 
 
 def load_today_or_false(date):
@@ -66,6 +73,9 @@ today = datetime.today().strftime('%Y-%m-%d')
 
 # -------- TABS ---------
 daily_tab, history_tab = st.tabs(["Daily Dashboard", "History"])
+
+# -------- PRELOAD SP500 DATA ---------
+sp500 = load_data("^GSPC", start="2025-01-01", end=today)
 
 
 with daily_tab:
@@ -207,17 +217,27 @@ with history_tab:
     hist_df = pd.DataFrame({
         "date": dates,
         "% LM-negative": hist_pct_neg,
-        "% LM-uncertainty": hist_pct_unc,
+        "% LM-uncertain": hist_pct_unc,
         "% LM-positive": hist_pct_pos
     })
     bigrams_df = pd.DataFrame({
         "date": dates,
         "Top Bigrams": hist_bigrams
     })
+    pd_dates = pd.to_datetime(hist_df['date'])
+    prices = sp500["Close"].reindex(pd_dates, method="ffill")
+    # convert date column of prices to strings
+    prices.index = prices.index.strftime('%Y-%m-%d')
+    prices['Type'] = 'SP500'
+    y_min = prices["^GSPC"].min()
+    y_max = prices["^GSPC"].max()
+    delta = (y_max - y_min) * 0.1
+    y_domain = [y_min - delta, y_max + delta]
 
-    df_long = hist_df.melt(id_vars="date", var_name="Sentiment", value_name="Percentage")
 
-    chart = (
+    df_long = hist_df.melt(id_vars="date", value_vars=['% LM-negative', '% LM-uncertain', '% LM-positive'], var_name="Sentiment", value_name="Percentage")
+
+    sents = (
     alt.Chart(df_long)
     .mark_line(point=True)
     .encode(
@@ -226,10 +246,27 @@ with history_tab:
         color=alt.Color("Sentiment:N", title="Sentiment"), 
         tooltip=["date:N", "Sentiment:N", "Percentage:Q"]
         )
-    .properties(title="Language Model Sentiment Over Time", height=400)
+    .properties(title="Language Model Sentiment Over Time", height=500)
     )
+
+    prices = (
+    alt.Chart(prices.reset_index())
+    .mark_line(color="orange", point=True)
+    .encode(
+        x="date:N",
+        y=alt.Y("^GSPC:Q", title="SP500", scale=alt.Scale(domain=y_domain)),
+        tooltip=["Date:T", "^GSPC:Q"],
+        color=alt.Color("Type:N", title="SP500")
+    )
+    .properties(title="S&P 500 Closing Prices Over Time", height=500))
+
+    chart = alt.layer(sents, prices).resolve_scale(y='independent').properties(title='S&P 500 and Sentiments Over Time')
 
     st.altair_chart(chart, use_container_width=True)
 
+    #st.altair_chart(sents, use_container_width=True)
+
     st.subheader("Historical Top Bigrams")
     st.dataframe(bigrams_df)
+
+    
